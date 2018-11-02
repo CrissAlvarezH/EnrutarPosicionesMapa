@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -8,6 +9,8 @@
     tools:context=".MainActivity">
 
     <RelativeLayout
+        android:layout_alignParentTop="true"
+        android:id="@+id/relative_superior"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
@@ -36,8 +39,21 @@
     </RelativeLayout>
 
     <com.google.android.gms.maps.MapView
+        android:layout_below="@id/relative_superior"
         android:id="@+id/map_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-</LinearLayout>
+    <TextView
+        android:visibility="gone"
+        android:id="@+id/txt_pos_no_disponible"
+        android:background="@android:color/holo_red_light"
+        android:padding="8dp"
+        android:textColor="@android:color/white"
+        android:gravity="center"
+        android:layout_alignParentBottom="true"
+        android:text="Posicion GPS sin señal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+</RelativeLayout>
