@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -25,12 +26,19 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, View.OnClickListener, GoogleMap.OnMapClickListener, GoogleMap.OnInfoWindowLongClickListener{
+
+    private boolean mostarTurorial = true;
 
     private Button btnTrazarRutaOptima;
+    private FloatingActionButton btnAddPos;
     private ProgressBar progressRutaOptima;
     private MapView mapView;
     private GoogleMap mapa;
@@ -38,6 +46,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private LocationRequest locationRequest;
     private FusedLocationProviderClient locationClient;
     private Location posicion;
+    private ArrayList<Marker> marcadores = new ArrayList<>();
+    private boolean modoAddPos;// Modo esperando a que toquen mapa para agregar un marcador
 
     @Override
     protected void onResume() {
@@ -56,9 +66,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        modoAddPos = false;
 
         progressRutaOptima = findViewById(R.id.progress_ruta_optima);
         btnTrazarRutaOptima = findViewById(R.id.btn_trazar_ruta_optima);
+        btnAddPos = findViewById(R.id.btn_add_pos);
         mapView = findViewById(R.id.map_view);
         txtPosNoDisponible = findViewById(R.id.txt_pos_no_disponible);
 
@@ -75,6 +87,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             locationClient.requestLocationUpdates(locationRequest, new PosicionCallback(), null);
         }
+
+        btnTrazarRutaOptima.setOnClickListener(this);
+        btnAddPos.setOnClickListener(this);
     }
 
     @Override
@@ -82,6 +97,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         validarPermisos();
 
         mapa = googleMap;
+        mapa.setOnMapClickListener(this);
+        mapa.setOnInfoWindowLongClickListener(this);
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             mapa.setMyLocationEnabled(true);
@@ -98,6 +115,52 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 locationClient.requestLocationUpdates(locationRequest, new PosicionCallback(), null);
             }
         }
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.btn_trazar_ruta_optima:
+
+                break;
+            case R.id.btn_add_pos:
+                modoAddPos = true;
+                btnAddPos.hide();
+
+                // Mostramos solo la primera vez que se le de click
+                if ( mostarTurorial) {
+                    Toast.makeText(this, "Toque el mapa para agregar marcador", Toast.LENGTH_LONG).show();
+                    mostarTurorial = false;
+                }
+
+                break;
+        }
+    }
+
+    @Override
+    public void onMapClick(LatLng latLng) {
+        if( modoAddPos ) {
+            String index = String.valueOf( (marcadores.size() + 1) );
+
+            Marker marcador = mapa.addMarker(
+                    new MarkerOptions()
+                            .title( index )
+                            .position(latLng)
+            );
+
+            marcadores.add(marcador);
+
+            // Termina el modo para agregar marcador
+            modoAddPos = false;
+            btnAddPos.show();
+        }
+    }
+
+    @Override
+    public void onInfoWindowLongClick(Marker marker) {
+
+
+
     }
 
     private class PosicionCallback extends LocationCallback{

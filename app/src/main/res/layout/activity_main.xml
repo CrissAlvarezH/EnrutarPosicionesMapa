@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -9,10 +8,10 @@
     tools:context=".MainActivity">
 
     <RelativeLayout
-        android:layout_alignParentTop="true"
         android:id="@+id/relative_superior"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true">
 
         <ProgressBar
             android:id="@+id/progress_ruta_optima"
@@ -25,11 +24,11 @@
             android:visibility="gone" />
 
         <Button
-            android:layout_margin="0dp"
             android:id="@+id/btn_trazar_ruta_optima"
             style="@style/Base.Widget.AppCompat.Button.Borderless"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_margin="0dp"
             android:minHeight="0dp"
             android:padding="10dp"
             android:text="Trazar ruta optima"
@@ -39,21 +38,30 @@
     </RelativeLayout>
 
     <com.google.android.gms.maps.MapView
-        android:layout_below="@id/relative_superior"
         android:id="@+id/map_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:layout_below="@id/relative_superior" />
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/btn_add_pos"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_margin="20dp"
+        android:src="@drawable/ic_add_location" />
 
     <TextView
-        android:visibility="gone"
         android:id="@+id/txt_pos_no_disponible"
-        android:background="@android:color/holo_red_light"
-        android:padding="8dp"
-        android:textColor="@android:color/white"
-        android:gravity="center"
-        android:layout_alignParentBottom="true"
-        android:text="Posicion GPS sin señal"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="@android:color/holo_red_light"
+        android:gravity="center"
+        android:padding="8dp"
+        android:text="Posicion GPS sin señal"
+        android:textColor="@android:color/white"
+        android:visibility="gone" />
 
 </RelativeLayout>
