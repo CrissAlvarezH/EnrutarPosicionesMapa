@@ -1,7 +1,10 @@
 package com.example.cristian.enrutarposicionesmapa;
 
 import android.Manifest;
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
@@ -148,6 +151,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             .position(latLng)
             );
 
+            marcador.setTag(index);
+
             marcadores.add(marcador);
 
             // Termina el modo para agregar marcador
@@ -157,9 +162,24 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     @Override
-    public void onInfoWindowLongClick(Marker marker) {
+    public void onInfoWindowLongClick(final Marker marker) {
 
+        Dialog dialog = new AlertDialog.Builder(this)
+                .setMessage("¿Seguro que quiere eliminar el marcker "+marker.getTag()+"?")
+                .setPositiveButton("Si", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        marcadores.remove(marker);
+                        marker.remove();// lo quitamos del mapa
 
+                        if( !MainActivity.this.isFinishing() )
+                            dialog.dismiss();
+                    }
+                })
+                .setNegativeButton("Ahora no joven", null)
+                .create();
+
+        dialog.show();
 
     }
 
