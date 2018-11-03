@@ -6,6 +6,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationManager;
 import android.support.annotation.NonNull;
@@ -14,6 +15,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
@@ -29,19 +31,31 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.gson.Gson;
 
 import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, View.OnClickListener, GoogleMap.OnMapClickListener, GoogleMap.OnInfoWindowLongClickListener{
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
-    private boolean mostarTurorial = true;
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, View.OnClickListener,
+        GoogleMap.OnMapClickListener, GoogleMap.OnInfoWindowLongClickListener,
+        GoogleMap.OnMarkerClickListener{
+
+    private static final String TAG = "ActividadPrincipal";
+
+    private boolean mostarTurorial;
 
     private Button btnTrazarRutaOptima;
-    private FloatingActionButton btnAddPos;
+    private FloatingActionButton btnAddPos, btnTrazarRutaUnica;
     private ProgressBar progressRutaOptima;
     private MapView mapView;
     private GoogleMap mapa;
@@ -51,6 +65,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Location posicion;
     private ArrayList<Marker> marcadores = new ArrayList<>();
     private boolean modoAddPos;// Modo esperando a que toquen mapa para agregar un marcador
+    private ServicioWeb servicioWeb;
+    private Gson gson;
+
+    private String destinoRutaUnica;
 
     @Override
     protected void onResume() {
@@ -69,10 +87,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mostarTurorial = true;
         modoAddPos = false;
 
         progressRutaOptima = findViewById(R.id.progress_ruta_optima);
         btnTrazarRutaOptima = findViewById(R.id.btn_trazar_ruta_optima);
+        btnTrazarRutaUnica = findViewById(R.id.btn_trazar_ruta_unica);
         btnAddPos = findViewById(R.id.btn_add_pos);
         mapView = findViewById(R.id.map_view);
         txtPosNoDisponible = findViewById(R.id.txt_pos_no_disponible);
@@ -93,6 +113,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         btnTrazarRutaOptima.setOnClickListener(this);
         btnAddPos.setOnClickListener(this);
+        btnTrazarRutaUnica.setOnClickListener(this);
+
+        // Inicializamos Retrofit y el servicio web para consultar las rutas al API de Google
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl( Utils.Constantes.BASE_URL_RUTAS )// URL de google maps
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        servicioWeb = retrofit.create(ServicioWeb.class);
+
+        gson = new Gson();// Será utilizado para los logs de objetos
     }
 
     @Override
@@ -102,6 +133,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapa = googleMap;
         mapa.setOnMapClickListener(this);
         mapa.setOnInfoWindowLongClickListener(this);
+        mapa.setOnMarkerClickListener(this);
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             mapa.setMyLocationEnabled(true);
@@ -136,6 +168,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     mostarTurorial = false;
                 }
 
+                break;
+            case R.id.btn_trazar_ruta_unica:
+
+                pedirRuta(destinoRutaUnica);
+
+                btnTrazarRutaUnica.hide();
                 break;
         }
     }
@@ -181,6 +219,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         dialog.show();
 
+    }
+
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        btnTrazarRutaUnica.show();
+
+        // El destino que buscaremos al dar click en btnTrazarRutaUnica
+        destinoRutaUnica = marker.getPosition().latitude + "," + marker.getPosition().longitude;
+
+        return false;
     }
 
     private class PosicionCallback extends LocationCallback{
@@ -230,6 +278,65 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         return estanCumplidos;
     }
 
+    private void pedirRuta(String destino){
+        // El origen es la posición actual del dispositivo
+        String origen = posicion.getLatitude() + "," + posicion.getLongitude();
+
+        Call<ResRutas> resCall = servicioWeb.pedirRuta(origen, destino, getString(R.string.llave_api_google_maps));
+
+        resCall.enqueue(new Callback<ResRutas>() {
+            @Override
+            public void onResponse(Call<ResRutas> call, Response<ResRutas> response) {
+
+                if( response.isSuccessful() ) {
+                    ResRutas resRutas = response.body();
+                    Log.v(TAG, "ResRutas: "+gson.toJson(resRutas));
+
+                    if( resRutas != null && resRutas.getStatus().equals("OK") ) {
+
+                        if( !resRutas.getRoutes().isEmpty() ){
+                            // Tomamos la polilinea de la primera ruta
+                            ArrayList<LatLng> rutaLatLng = Utils.decodeOverviewPolyLinePonts(
+                                    resRutas.getRoutes().get(0).getOverviewPolyline().getPoints()
+                            );
+
+                            if( rutaLatLng != null ) {
+
+                                PolylineOptions polyOpt = new PolylineOptions();
+                                polyOpt.color( Color.parseColor("#9c27b0") );
+                                polyOpt.width(5);
+                                polyOpt.addAll(rutaLatLng);
+
+                                Polyline polyRutaUnica = mapa.addPolyline(polyOpt);
+
+                            }else
+                                Toast.makeText(MainActivity.this, "Error al decodificar la ruta", Toast.LENGTH_SHORT).show();
+                        }else
+                            Toast.makeText(MainActivity.this, "No se encontraron rutas", Toast.LENGTH_SHORT).show();
+                    } else {
+                        if( resRutas != null && resRutas.getStatus().equals("OVER_QUERY_LIMIT") ) {
+                            Toast.makeText(MainActivity.this, "Limite de peticiones gratuitas diarias superado para el API de Google", Toast.LENGTH_LONG).show();
+                        } else if( resRutas != null && resRutas.getStatus().equals("REQUEST_DENIED") ) {
+                            Toast.makeText(MainActivity.this, "Petición denegada, revise la llave de la API", Toast.LENGTH_LONG).show();
+                        } else {
+                            Toast.makeText(MainActivity.this, "Ruta nula o estado no OK", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                } else {
+                    Toast.makeText(MainActivity.this, "Pedir ruta no fue exitosa", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResRutas> call, Throwable t) {
+                t.printStackTrace();
+                Toast.makeText(MainActivity.this, "Ocurrió un error al pedir la ruta", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+
+    }
 
     @Override
     protected void onDestroy() {

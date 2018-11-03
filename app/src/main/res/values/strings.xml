@@ -1,4 +1,6 @@
 <resources>
     <string name="app_name">EnrutarPosicionesMapa</string>
     <string name="title_activity_maps">Map</string>
+
+    <string name="llave_api_google_maps">AIzaSyCXJQEJzvMqMArLj49vBhlBW5ZUpinI_n0</string>
 </resources>

@@ -23,7 +23,7 @@
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyCsNvoUrz7w4dsWa7pNd6ta416VqOemhNY" />
+            android:value="@string/llave_api_google_maps" />
 
     </application>
 
