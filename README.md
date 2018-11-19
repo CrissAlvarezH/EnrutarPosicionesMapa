@@ -22,7 +22,7 @@ por el usuario, para esto consume el API de Google Maps Directions.
 
  ## Demostración 
  
- ![Demo app enrutar](https://crissalvarezh.github.io/ImagenesRepos/imgs/EnrutarPosicionesMapa/demo_app_enrutar.gif)
+  <img src="https://crissalvarezh.github.io/ImagenesRepos/imgs/EnrutarPosicionesMapa/demo_app_enrutar.gif"  width="300px" >
  
  ## Proximas mejoras
  
